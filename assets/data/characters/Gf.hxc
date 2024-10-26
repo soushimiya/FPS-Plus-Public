@@ -1,7 +1,7 @@
 import flixel.tweens.FlxEase;
 import StringTools;
 
-class Gf extends CharacterInfoBase
+class Gf extends CharacterInfo
 {
 
     override public function new(){
