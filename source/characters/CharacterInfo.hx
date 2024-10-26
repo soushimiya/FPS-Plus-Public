@@ -96,7 +96,7 @@ typedef CharacterInfo = {
 	This is the base class for character info. When making your own character make a new class extending this one.    
 	@author Rozebud
 **/
-class CharacterInfoBase
+class CharacterInfo
 {
 
     public var includeInCharacterList:Bool = true;

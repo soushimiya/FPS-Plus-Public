@@ -32,14 +32,15 @@ class PolymodHandler
 
         trace("AFTER CULLING: " + modDirs);
 		
-		loadedModMetadata = Polymod.init({
-			modRoot: "./mods/",
-			dirs: modDirs,
+		Polymod.init({
+			modRoot: "mods",
 			useScriptedClasses: true,
             errorCallback: onPolymodError,
             frameworkParams: buildFrameworkParams(),
 			apiVersionRule: API_VERSION
 		});
+        //If Mods Folder doesn't exist still load Scripted Classes
+        Polymod.loadOnlyMods(modDirs);
 
         trace("LOADED METADATA: " + loadedModMetadata);
 
@@ -96,7 +97,7 @@ class PolymodHandler
         Polymod.addDefaultImport(Conductor);
 
         //Import customizable class so now we can make custom class without importing
-        Polymod.addDefaultImport(characters.CharacterInfoBase);
+        Polymod.addDefaultImport(characters.CharacterInfo);
         Polymod.addDefaultImport(note.NoteType);
         Polymod.addDefaultImport(events.Events);
 
