@@ -46,6 +46,7 @@
 	<assets path="assets/images" />
 	<assets path="assets/data" />
 	<assets path="assets/videos" />
+	<assets path="assets/locales" />
 	<!-- <template path='mods' /> -->
 
 	<!-- <library name="noPreload" preload='false'/> -->
@@ -65,6 +66,7 @@
 	<section if="PRELOAD_ALL">
 		<library name="data" preload="true" />
 		<library name="sounds" preload="true" />
+		<library name="locales" preload="true" />
 		<library name="music" preload="true" />
 		<library name="images" preload="true" />
 		<library name="videos" preload="true" />
@@ -73,6 +75,7 @@
 	<section if="NO_PRELOAD_ALL">
 		<library name="data" preload="false" />
 		<library name="sounds" preload="false" />
+		<library name="locales" preload="false" />
 		<library name="music" preload="false" />
 		<library name="images" preload="false" />
 		<library name="videos" preload="false" />
@@ -100,6 +103,7 @@
 	<haxelib name="funkin.vis" />
 	<haxelib name="grig.audio" />
 	<haxelib name="polymod" />
+	<haxelib name="json2object" />
 
 	<!--haxelib name="newgrounds"/-->
 	<!--haxelib name="faxe" if='switch'/-->

@@ -333,7 +333,8 @@ class PolymodHandler
                 "music" => "music",
                 "songs" => "songs",
                 "sounds" => "sounds",
-                "videos" => "videos"
+                "videos" => "videos",
+                "locales" => "locales"
             ]
         }
     }

@@ -20,6 +20,8 @@ class Main extends Sprite
 	{
 		super();
 
+		Translation.set("ja-JP");
+		
 		PolymodHandler.init();
 
 		#if sys
