@@ -1,0 +1,19 @@
+{
+    "dialogue": [
+        {
+            "character": "senpai",
+            "text": "Ah, a new fair maiden has come in search of true love!",
+            "box": "normal"
+        },
+        {
+            "character": "senpai",
+            "text": "A serenade between gentlemen shall decide where her beautiful heart shall reside.",
+            "box": "normal"
+        },
+        {
+            "character": "bf-pixel",
+            "text": "Beep bo bop",
+            "box": "normal"
+        }
+    ]
+}

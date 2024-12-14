@@ -1,0 +1,30 @@
+{
+    "path": "ui/dialogue/pixel/box",
+    "font": {
+        "name": "pixel.otf",
+        "size": 32,
+        "color": "0xFF3F2021"
+    },
+    "antialiasing": false,
+    "scale": 5.4,
+    "position": [520, 350],
+    "textPosition": [220, 480],
+    "animations": [
+        {
+            "name": "normalOpen",
+            "prefix": "Text Box Appear",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": false,
+            "loop": false
+        },
+        {
+            "name": "normal",
+            "prefix": "Text Box Appear0004",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": false,
+            "loop": true
+        }
+    ]
+}

@@ -1,7 +1,7 @@
 import flixel.util.FlxColor;
 import flixel.FlxSprite;
 import flixel.FlxG;
-import objects.DialogueBox;
+import objects.dialogue.DialogueBox;
 
 class SchoolIntro extends ScriptedCutscene
 {
@@ -32,13 +32,9 @@ class SchoolIntro extends ScriptedCutscene
 
         var dialogue:Array<String> = [];
 
-        if(Utils.exists(Paths.text("songs/" + PlayState.SONG.song.toLowerCase() + "/" + PlayState.SONG.song.toLowerCase() + "Dialogue"))){
-			dialogue = Utils.getTextInLines(Paths.text("songs/" + PlayState.SONG.song.toLowerCase() + "/" + PlayState.SONG.song.toLowerCase() + "Dialogue"));
-		}
-
-        dialogueBox = new DialogueBox(false, dialogue);
+        dialogueBox = new DialogueBox(PlayState.SONG.song.toLowerCase());
 		dialogueBox.scrollFactor.set();
-		dialogueBox.finishThing = playstate.startCountdown;
+		dialogueBox.finishThing = startSong;
 		dialogueBox.cameras = [playstate.camHUD];
 
 
@@ -112,6 +108,11 @@ class SchoolIntro extends ScriptedCutscene
 
     function cameraFade() {
         FlxG.camera.fade(0xFFFFFFFF, 1.6, false);
+    }
+
+    function startSong() {
+        FlxG.sound.music.fadeOut(1, 0, 0.8);
+        playstate.startCountdown();
     }
 
 }

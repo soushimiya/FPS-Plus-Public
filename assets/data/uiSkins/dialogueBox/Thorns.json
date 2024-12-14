@@ -1,0 +1,30 @@
+{
+    "path": "ui/dialogue/pixel/box-evil",
+    "font": {
+        "name": "pixel.otf",
+        "size": 32,
+        "color": "0xFFFFFFFF"
+    },
+    "antialiasing": false,
+    "scale": 5.4,
+    "position": [520, 350],
+    "textPosition": [220, 480],
+    "animations": [
+        {
+            "name": "normalOpen",
+            "prefix": "Spirit Textbox spawn",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": false,
+            "loop": false
+        },
+        {
+            "name": "normal",
+            "prefix": "Spirit Textbox spawn instance 10011",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": false,
+            "loop": true
+        }
+    ]
+}

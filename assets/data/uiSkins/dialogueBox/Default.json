@@ -1,0 +1,46 @@
+{
+    "path": "ui/dialogue/default/box",
+    "font": {
+        "name": "funkin.otf",
+        "size": 62,
+        "color": "0xFF000000"
+    },
+    "antialiasing": true,
+    "scale": 1,
+    "position": [50, 380],
+    "textPosition": [130, 500],
+    "animations": [
+        {
+            "name": "normalOpen",
+            "prefix": "Speech Bubble Normal Open",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": false,
+            "loop": false
+        },
+        {
+            "name": "normal",
+            "prefix": "speech bubble normal0",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": false,
+            "loop": true
+        },
+        {
+            "name": "normalFlipOpen",
+            "prefix": "Speech Bubble Normal Open",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": true,
+            "loop": false
+        },
+        {
+            "name": "normalFlip",
+            "prefix": "speech bubble normal0",
+            "offset": [0, 0],
+            "fps": 24,
+            "flipX": true,
+            "loop": true
+        }
+    ]
+}

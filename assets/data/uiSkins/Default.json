@@ -3,5 +3,6 @@
     "countdown": "Default",
     "note": "DefaultNoteSkin",
     "playerNotes": "Default",
-    "opponentNotes": "Default"
+    "opponentNotes": "Default",
+    "dialogueBox": "Default"
 }

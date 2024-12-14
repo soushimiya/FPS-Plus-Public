@@ -79,7 +79,8 @@ class PlayState extends MusicBeatState
     	countdown: "Default",
     	note: "DefaultNoteSkin",
     	playerNotes: "Default",
-    	opponentNotes: "Default"
+    	opponentNotes: "Default",
+		dialogueBox: "Default"
 	};
 
 	var previousReportedSongTime:Float = -1;
@@ -432,7 +433,8 @@ class PlayState extends MusicBeatState
 			countdown: "Default",
 			note: "DefaultNoteSkin",
 			playerNotes: "Default",
-			opponentNotes: "Default"
+			opponentNotes: "Default",
+			dialogueBox: "Default"
 		};
 
 		if(Utils.exists(Paths.json(stage.uiType, "data/uiSkins"))){
@@ -443,6 +445,7 @@ class PlayState extends MusicBeatState
 			if(skinJson.countdown != null && Utils.exists(Paths.json(skinJson.countdown, "data/uiSkins/countdown"))){ uiSkinNames.countdown = skinJson.countdown; }
 			if(skinJson.playerNotes != null && Utils.exists(Paths.json(skinJson.playerNotes, "data/uiSkins/hudNote"))){ uiSkinNames.playerNotes = skinJson.playerNotes; }
 			if(skinJson.opponentNotes != null && Utils.exists(Paths.json(skinJson.opponentNotes, "data/uiSkins/hudNote"))){ uiSkinNames.opponentNotes = skinJson.opponentNotes; }
+			if(skinJson.dialogueBox != null && Utils.exists(Paths.json(skinJson.dialogueBox, "data/uiSkins/dialogueBox"))){ uiSkinNames.dialogueBox = skinJson.dialogueBox; }
 		}
 
 		//Set the start point of the characters.
@@ -676,6 +679,8 @@ class PlayState extends MusicBeatState
 
 		// cameras = [FlxG.cameras.list[1]];
 		startingSong = true;
+
+		objects.dialogue.DialogueBox.skin = new objects.dialogue.DialogueSkinBase(uiSkinNames.dialogueBox);
 
 		//Get and run cutscene stuff
 		if(Utils.exists("assets/data/songs/" + SONG.song.toLowerCase() + "/cutscene.json")){
