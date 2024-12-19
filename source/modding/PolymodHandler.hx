@@ -202,6 +202,7 @@ class PolymodHandler
         trace("ScriptableCharacterSelectCharacter: " + characterSelect.ScriptableCharacterSelectCharacter.listScriptClasses());
         trace("ScriptableDJCharacter: " + freeplay.ScriptableDJCharacter.listScriptClasses());
         trace("ScriptableResultsCharacter: " + results.ScriptableResultsCharacter.listScriptClasses());
+        trace("ScriptableDialogueBox: " + objects.dialogue.ScriptableDialogueBox.listScriptClasses());
 
         trace("<== CUSTOM OBJECTS ==>");
         trace("ScriptableObject: " + objects.ScriptableObject.listScriptClasses());
@@ -266,6 +267,8 @@ class PolymodHandler
         Polymod.addDefaultImport(characterSelect.CharacterSelectCharacter);
         Polymod.addDefaultImport(note.NoteSkinBase);
         Polymod.addDefaultImport(results.ResultsCharacter);
+
+        Polymod.addDefaultImport(objects.dialogue.DialogueBox);
 
         Polymod.addDefaultImport(objects.ScriptableObject.ScriptedObject);
         Polymod.addDefaultImport(objects.ScriptableSprite.ScriptedSprite);

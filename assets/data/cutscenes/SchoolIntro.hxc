@@ -1,7 +1,7 @@
 import flixel.util.FlxColor;
 import flixel.FlxSprite;
 import flixel.FlxG;
-import objects.dialogue.DialogueBox;
+import objects.dialogue.ScriptableDialogueBox;
 
 class SchoolIntro extends ScriptedCutscene
 {
@@ -32,7 +32,7 @@ class SchoolIntro extends ScriptedCutscene
 
         var dialogue:Array<String> = [];
 
-        dialogueBox = new DialogueBox(PlayState.SONG.song.toLowerCase());
+        dialogueBox = ScriptableDialogueBox.init("DialogueBoxPixel", PlayState.SONG.song.toLowerCase());
 		dialogueBox.scrollFactor.set();
 		dialogueBox.finishThing = startSong;
 		dialogueBox.cameras = [playstate.camHUD];

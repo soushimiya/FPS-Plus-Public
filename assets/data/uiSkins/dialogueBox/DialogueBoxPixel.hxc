@@ -1,0 +1,35 @@
+import flixel.text.FlxText;
+import flixel.FlxG;
+
+class DialogueBoxPixel extends DialogueBox
+{
+    var dropText:FlxText;
+
+    override public function new(song:String)
+    {
+        super(song);
+
+        dropText = new FlxText(dialogueTxt.x + 2, dialogueTxt.y + 2, Std.int(box.width * 0.7), "", 32);
+		dropText.font = 'Pixel Arial 11 Bold';
+		dropText.color = 0xFFD89494;
+		
+        //If song is thorns, not add text drop becase its useless
+        if (song != "thorns"){
+            insert(members.indexOf(dialogueTxt), dropText);
+        }
+    }
+
+    override public function update(elapsed:Float)
+    {
+        super.update(elapsed);
+        
+        dropText.text = dialogueTxt.text;
+    }
+
+    override public function finishDialogue()
+    {
+        super.finishDialogue();
+
+        remove(dropText);
+    }
+}
