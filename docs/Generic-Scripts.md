@@ -16,9 +16,10 @@ To make a script run in every song you have to append it to the global scripts l
 
 ## Functions
 
-Similarly to stages, there are a variety of functions you can override that will be automatically called at specific times:
+There are a variety of functions you can override that will be automatically called at specific times:
 
-- `create()`: This is run when the script is created after `PlayState` is created.
+- `create()`: This is run when the script is created before `PlayState` is created.
+- `postCreate()`: This is run after the stage and `PlayState` is finished being created.
 - `update(elapsed)`: This is run every frame.
     - `elapsed`: The time in seconds between this frame and the previous frame.
 - `beat(curBeat)`: This is run every song beat.

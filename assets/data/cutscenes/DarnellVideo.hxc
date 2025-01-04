@@ -14,8 +14,7 @@ class DarnellVideo extends ScriptedCutscene
     public function new(args:Array<Dynamic>){
         super(args);
 
-        ingameCutscene = ScriptableCutscene.init("DarnellIntro", []);
-        addGeneric(ingameCutscene);
+        playstate.scripts.set("DarnellIntro", ScriptableCutscene.init("DarnellIntro", []));
 
         black = new FlxSprite().makeGraphic(1, 1, 0xFF000000);
 		black.scale.set(1280, 720);

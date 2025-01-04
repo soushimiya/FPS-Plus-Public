@@ -13,6 +13,11 @@ class Script
     public function create(){}
 
     /**
+	* Called after PlayState.create() is done.
+	*/
+    public function postCreate(){}
+
+    /**
      * Called every frame in PlayState update.
      *
      * @param   elpased  The elapsed time between previous frames passed in by PlayState.
@@ -100,10 +105,15 @@ class Script
     inline function addToHud(x:FlxBasic)                { PlayState.instance.hudLayer.add(x); }
     inline function removeHud(x:FlxBasic)               { PlayState.instance.hudLayer.remove(x); }
 
-    inline function addGeneric(x:FlxBasic)              { FlxG.state.add(x); }
-    inline function removeGeneric(x:FlxBasic)           { FlxG.state.remove(x); }
-    inline function addGenericSubstate(x:FlxBasic)      { FlxG.state.subState.add(x); }
-    inline function removeGenericSubstate(x:FlxBasic)   { FlxG.state.subState.remove(x); }
+    // these functions are not inline because it needs change the way it works depending on the script type.
+    public function addGeneric(x:FlxBasic)              { FlxG.state.add(x); }
+    public function removeGeneric(x:FlxBasic)           { FlxG.state.remove(x); }
+    public function addGenericSubstate(x:FlxBasic)      { FlxG.state.subState.add(x); }
+    public function removeGenericSubstate(x:FlxBasic)   { FlxG.state.subState.remove(x); }
+
+    public function add(x:FlxBasic)         { addGeneric(x); }
+    public function remove(x:FlxBasic)         { removeGeneric(x); }
+    public function insert(pos:Int, x:FlxBasic)         { FlxG.state.insert(pos, x); }
 
     public function toString():String{ return "Script"; }
 }
