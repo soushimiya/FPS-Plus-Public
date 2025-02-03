@@ -1,21 +1,27 @@
 package ui;
 
 import note.*;
+import flixel.math.FlxRect;
 import flixel.group.FlxSpriteGroup;
-import flixel.util.FlxTypedSignal;
+import flixel.util.FlxSignal;
+import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.FlxG;
 
 using StringTools;
 
-// Just FlxSprite with some additional vars
+// just FlxSprite with some additional vars
 class StrumSprite extends flixel.FlxSprite
 {
 	public var inputTime:Int = 0;
 	public var releaseTime:Float = -1;
 
 	public var state:StrumState = RELEASE;
+
+	public function isPressing():Bool
+		return (state == PRESS || state == HOLD);
 }
 
+@:access(PlayState) //Fuck that
 class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 {
 	public var notes:FlxTypedGroup<Note>;
@@ -28,8 +34,8 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 	private static final RELEASE_BUFFER = (2 / 60);
 
-	public var onHit:FlxTypedSignal = new FlxTypedSignal<Note->Void>();
-	public var onMiss:FlxTypedSignal = new FlxTypedSignal<(Int, Void, Float, Bool, Bool, Bool, Null<Int>)->Void>();
+	public var onHit = new FlxTypedSignal<(Note) -> Void>();
+	//public var onMiss = new FlxTypedSignal<(?Int, ?Void, ?Float, ?Bool, ?Bool, ?Bool, Null<Int>) -> Void>();
 
 	override public function new(x:Float, y:Float, skin:String = "Default", initType:StrumInitType = DEFAULT, ?extraData:Map<String, Dynamic>)
 	{
@@ -70,7 +76,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 				{
 					if (name == "confirm")
 					{
-						arrow.animation.play('static', true);
+						if (arrow.state != HOLD){ arrow.animation.play('static', true); }
 					}
 				}
 			}
@@ -134,23 +140,16 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			if (curStrum.inputTime == 1)
 			{
 				curStrum.state = PRESS;
+				curStrum.releaseTime = -1;
 			}
 			if (curStrum.state == HOLD && curStrum.inputTime == 0)
 			{
 				curStrum.state = RELEASE;
+				curStrum.releaseTime = 0;
 			}
 			if (curStrum.inputTime > 0)
 			{
 				curStrum.state = HOLD;
-			}
-
-			if (curStrum.state == RELEASE)
-			{
-				curStrum.releaseTime = 0;
-			}
-			else if (curStrum.state == PRESS)
-			{
-				curStrum.releaseTime = -1;
 			}
 
 			if (curStrum.releaseTime != -1)
@@ -169,7 +168,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 	private function checkInput():Void
 	{
 		var hitNotes:Array<Note> = [];
-		var anyNoteInRange:Bool = (daNote.inRange && daNote.mustPress);
+		var anyNoteInRange:Bool = false;
 
 		// Botplay Stuff
 		if (autoplay)
@@ -177,7 +176,8 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			character.holdTimer = 0;
 			notes.forEachAlive(function(daNote:Note)
 			{
-				if (!daNote.wasGoodHit && daNote.mustPress && daNote.strumTime < Conductor.songPosition + Conductor.safeZoneOffset * (!daNote.isSustainNote ? 0.125 : (daNote.prevNote.wasGoodHit ? 1 : 0)))
+				if (daNote.inRange){ anyNoteInRange = true; }
+				if (!daNote.wasGoodHit && daNote.strumTime < Conductor.songPosition + Conductor.safeZoneOffset * (!daNote.isSustainNote ? 0.125 : (daNote.prevNote.wasGoodHit ? 1 : 0)))
 				{
 					hitNotes.push(daNote);
 				}
@@ -192,7 +192,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			var ignoreList:Array<Int> = [];
 
 			notes.forEachAlive(function(daNote:Note) {
-				if (daNote.canBeHit && daNote.mustPress && !daNote.tooLate) {
+				if (daNote.canBeHit && !daNote.tooLate) {
 					possibleNotes.push(daNote);
 					ignoreList.push(daNote.noteData);
 				}
@@ -202,14 +202,14 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 			if (possibleNotes.length > 0){
 				for(note in possibleNotes){
-					if (controlArray[note.noteData] && !directionsAccounted[note.noteData]){
-						goodNoteHit(note);
+					if (members[note.noteData].isPressing() && !directionsAccounted[note.noteData]){
+						hitNotes.push(note);
 						directionsAccounted[note.noteData] = true;
 					}
 				}
 				for(i in 0...4){
-					if(!ignoreList.contains(i) && controlArray[i]){
-						badNoteCheck(i);
+					if(!ignoreList.contains(i) && members[i].isPressing()){
+						PlayState.instance.badNoteCheck(i);
 					}
 				}
 			}
@@ -217,6 +217,37 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			if (Config.ghostTapType == 0){ badNoteCheck(i); }
 			*/
 		}
+
+		notes.forEachAlive(function(daNote:Note) {
+			//Guitar Hero Type Held Notes
+			if(daNote.isSustainNote){
+
+				//This is for all subsequent released notes.
+				if(daNote.prevNote.tooLate && !daNote.prevNote.wasGoodHit){
+					daNote.tooLate = true;
+					daNote.destroy();
+					//onMiss.dispatch(daNote.noteData, daNote.missCallback, Scoring.HOLD_DROP_DMAMGE_PER_NOTE * (daNote.isFake ? 0 : 1), false, false, true, Scoring.HOLD_DROP_PENALTY);
+				}
+
+				//This is for the first released note.
+				if(daNote.prevNote.wasGoodHit && !daNote.wasGoodHit){
+
+					if(members[daNote.noteData].releaseTime >= RELEASE_BUFFER){
+						//onMiss.dispatch(daNote.noteData, daNote.missCallback, Scoring.HOLD_DROP_INITAL_DAMAGE, true, false, true, Scoring.HOLD_DROP_INITIAL_PENALTY);
+						daNote.tooLate = true;
+						daNote.destroy();
+						character.holdTimer = 0;
+
+						var recursiveNote = daNote;
+						while(recursiveNote.prevNote != null && recursiveNote.prevNote.exists && recursiveNote.prevNote.isSustainNote){
+							recursiveNote.prevNote.visible = false;
+							recursiveNote = recursiveNote.prevNote;
+						}
+					}
+					
+				}
+			}
+		});
 
 		if (character.isSinging && character.holdTimer > Conductor.stepCrochet * character.stepsUntilRelease * 0.001 && !anyKeyHolding() && character.canAutoAnim && (Character.PREVENT_SHORT_IDLE ? !anyNoteInRange : true))
 		{
@@ -231,8 +262,9 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 		for(x in hitNotes){
 			onHit.dispatch(x);
+			x.hitCallback(x, character);
 			
-			forEach(function(spr:FlxSprite){
+			forEach(function(spr:flixel.FlxSprite){
 				if (Math.abs(x.noteData) == spr.ID){
 					spr.animation.play('confirm', true);
 				}
@@ -279,7 +311,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 			if (daNote.tooLate && !daNote.didTooLateAction && !daNote.isFake)
 			{
-				onMiss.dispatch(daNote.noteData, daNote.missCallback, Scoring.MISS_DAMAGE_AMOUNT, true, true);
+				//onMiss.dispatch(daNote.noteData, daNote.missCallback, Scoring.MISS_DAMAGE_AMOUNT, true, true);
 				daNote.didTooLateAction = true;
 			}
 

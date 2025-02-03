@@ -177,7 +177,6 @@ class PlayState extends MusicBeatState
 	private var autoplay:Bool = false;
 	public var preventScoreSaving:Bool = false;
 
-	public var notes:FlxTypedGroup<Note>;
 	public var unspawnNotes:Array<Note> = [];
 
 	public var anyPlayerNoteInRange:Bool = false;
@@ -188,11 +187,8 @@ class PlayState extends MusicBeatState
 
 	private static var prevCamFollow:FlxObject;
 
-	public var playerStrums:FlxTypedGroup<FlxSprite>;
-	public var enemyStrums:FlxTypedGroup<FlxSprite>;
-
-	public var playerCovers:FlxTypedGroup<NoteHoldCover>;
-	public var enemyCovers:FlxTypedGroup<NoteHoldCover>;
+	public var playerStrums:Strumline;
+	public var enemyStrums:Strumline;
 
 	public var curSong:String = "";
 
@@ -588,18 +584,18 @@ class PlayState extends MusicBeatState
 			strumLineVerticalPosition = 30;
 		}
 
-		playerStrums = new FlxTypedGroup<FlxSprite>();
-		enemyStrums = new FlxTypedGroup<FlxSprite>();
+		playerStrums = new Strumline(FlxG.width / 2, strumLineVerticalPosition, "Default", DEFAULT, ["tweenManager" => tweenManager]);
+		playerStrums.character = boyfriend;
+		playerStrums.onHit.add(goodNoteHit);
+
+		enemyStrums = new Strumline(0, strumLineVerticalPosition, "Default", DEFAULT, ["tweenManager" => tweenManager]);
+		enemyStrums.character = dad;
+		enemyStrums.autoplay = true;
+
 		add(playerStrums);
 		add(enemyStrums);
 
-		playerCovers = new FlxTypedGroup<NoteHoldCover>();
-		enemyCovers = new FlxTypedGroup<NoteHoldCover>();
-
 		generateSong(SONG.song);
-
-		add(playerCovers);
-		add(enemyCovers);
 
 		camFollow = new FlxPoint();
 		camFollowOffset = new FlxPoint();
@@ -663,9 +659,6 @@ class PlayState extends MusicBeatState
 
 		playerStrums.cameras = [camHUD];
 		enemyStrums.cameras = [camHUD];
-		playerCovers.cameras = [camHUD];
-		enemyCovers.cameras = [camHUD];
-		notes.cameras = [camHUD];
 		healthBar.cameras = [camHUD];
 		healthBarBG.cameras = [camHUD];
 		iconP1.cameras = [camHUD];
@@ -811,9 +804,6 @@ class PlayState extends MusicBeatState
 		iconP2.visible = true;
 		scoreTxt.visible = true;
 
-		generateStaticArrows(0);
-		generateStaticArrows(1);
-
 		startedCountdown = true;
 		Conductor.songPosition = 0;
 		Conductor.songPosition -= Conductor.crochet * 5;
@@ -956,9 +946,6 @@ class PlayState extends MusicBeatState
 		iconP2.visible = true;
 		scoreTxt.visible = true;
 
-		generateStaticArrows(0, true);
-		generateStaticArrows(1, true);
-
 		startedCountdown = true;
 		Conductor.songPosition = 0;
 	}
@@ -1029,9 +1016,6 @@ class PlayState extends MusicBeatState
 		}
 
 		FlxG.sound.list.add(vocals);
-
-		notes = new FlxTypedGroup<Note>();
-		add(notes);
 
 		var noteData:Array<SwagSection>;
 
@@ -1125,136 +1109,6 @@ class PlayState extends MusicBeatState
 		return FlxSort.byValues(FlxSort.ASCENDING, Obj1[0], Obj2[0]);
 	}
 
-	//player 1 is player, player 0 is opponent
-	public function generateStaticArrows(player:Int, ?instant:Bool = false, ?skin:String):Void{
-		if(skin == null){ 
-			if(player == 0){ skin = uiSkinNames.opponentNotes; }
-			else{ skin = uiSkinNames.playerNotes; }
-		}
-
-		var hudNoteSkinName:String = skin;
-		var hudNoteSkin:HudNoteSkinBase = new HudNoteSkinBase(hudNoteSkinName);
-
-		var hudNoteSkinInfo = hudNoteSkin.info;
-
-		for (i in 0...4){
-			
-			var babyArrow:FlxSprite = new FlxSprite(50, strumLineVerticalPosition);
-
-			switch(hudNoteSkinInfo.noteFrameLoadType){
-				case sparrow:
-					babyArrow.frames = Paths.getSparrowAtlas(hudNoteSkinInfo.notePath);
-				//case packer:
-				//	babyArrow.frames = Paths.getPackerAtlas(hudNoteSkinInfo.notePath);
-				case load(fw, fh):
-					babyArrow.loadGraphic(Paths.image(hudNoteSkinInfo.notePath), true, fw, fh);
-				default:
-					trace("not supported, sorry :[");
-			}
-
-			babyArrow.x += Note.swagWidth * i;
-
-			switch(hudNoteSkinInfo.arrowInfo[i].staticInfo.type){
-				case prefix:
-					babyArrow.animation.addByPrefix("static", hudNoteSkinInfo.arrowInfo[i].staticInfo.data.prefix, hudNoteSkinInfo.arrowInfo[i].staticInfo.data.framerate, true, hudNoteSkinInfo.arrowInfo[i].staticInfo.data.flipX, hudNoteSkinInfo.arrowInfo[i].staticInfo.data.flipY);
-				case frame:
-					babyArrow.animation.add("static", hudNoteSkinInfo.arrowInfo[i].staticInfo.data.frames, hudNoteSkinInfo.arrowInfo[i].staticInfo.data.framerate, true, hudNoteSkinInfo.arrowInfo[i].staticInfo.data.flipX, hudNoteSkinInfo.arrowInfo[i].staticInfo.data.flipY);
-			}
-
-			switch(hudNoteSkinInfo.arrowInfo[i].pressedInfo.type){
-				case prefix:
-					babyArrow.animation.addByPrefix("pressed", hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.prefix, hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.framerate, false, hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.flipX, hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.flipY);
-				case frame:
-					babyArrow.animation.add("pressed", hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.frames, hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.framerate, false, hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.flipX, hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.flipY);
-			}
-
-			switch(hudNoteSkinInfo.arrowInfo[i].confrimedInfo.type){
-				case prefix:
-					babyArrow.animation.addByPrefix("confirm", hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.prefix, hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.framerate, false, hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.flipX, hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.flipY);
-				case frame:
-					babyArrow.animation.add("confirm", hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.frames, hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.framerate, false, hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.flipX, hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.flipY);
-			}
-
-			babyArrow.setGraphicSize(Std.int(babyArrow.width * hudNoteSkinInfo.scale));
-			babyArrow.updateHitbox();
-			babyArrow.antialiasing = hudNoteSkinInfo.antialiasing;
-
-			var noteCover:NoteHoldCover = new NoteHoldCover(babyArrow, i, hudNoteSkinInfo.coverPath);
-
-			babyArrow.scrollFactor.set();
-
-			babyArrow.ID = i;
-
-			babyArrow.x += 50;
-
-			if (player == 1) {
-				playerStrums.add(babyArrow);
-				babyArrow.animation.finishCallback = function(name:String){
-					if(autoplay){
-						if(name == "confirm"){
-							babyArrow.animation.play('static', true);
-						}
-					}
-				}
-
-				if(!Config.centeredNotes && !forceCenteredNotes){
-					babyArrow.x += ((FlxG.width / 2));
-				}
-				else{
-					babyArrow.x += ((FlxG.width / 4));
-				}
-
-				playerCovers.add(noteCover);
-
-			}
-			else {
-				enemyStrums.add(babyArrow);
-				babyArrow.animation.finishCallback = function(name:String){
-					if(name == "confirm"){
-						babyArrow.animation.play('static', true);
-					}
-				}
-
-				if(Config.centeredNotes || forceCenteredNotes){
-					babyArrow.x -= 1280;
-				}
-
-				enemyCovers.add(noteCover);
-			}
-
-			if(!instant){
-				babyArrow.y -= 10;
-				babyArrow.alpha = 0;
-				tweenManager.tween(babyArrow, {y: babyArrow.y + 10, alpha: 1}, 1, {ease: FlxEase.circOut, startDelay: 0.5 + (0.2 * i)});
-			}
-
-			babyArrow.animation.callback = function(name:String, frame:Int, index:Int) {
-				if(frame == 0){
-					babyArrow.centerOffsets();
-					switch(name){
-						case "static":
-							babyArrow.offset.x += hudNoteSkinInfo.arrowInfo[i].staticInfo.data.offset[0];
-							babyArrow.offset.y += hudNoteSkinInfo.arrowInfo[i].staticInfo.data.offset[1];
-						case "pressed":
-							babyArrow.offset.x += hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.offset[0];
-							babyArrow.offset.y += hudNoteSkinInfo.arrowInfo[i].pressedInfo.data.offset[1];
-						case "confirm":
-							babyArrow.offset.x += hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.offset[0];
-							babyArrow.offset.y += hudNoteSkinInfo.arrowInfo[i].confrimedInfo.data.offset[1];
-					}
-				}
-			}
-
-			babyArrow.animation.play('static');
-		}
-
-		if(player == 1){
-			//Prevents the game from lagging at first note splash.
-			NoteSplash.skinName = hudNoteSkinInfo.splashClass;
-			var preloadSplash = new NoteSplash(-2000, -2000, 0, true);
-		}
-	}
-
 	public function generateComboPopup(?skin:String):Void{
 		if(skin == null){ skin = uiSkinNames.comboPopup; }
 
@@ -1301,29 +1155,6 @@ class PlayState extends MusicBeatState
 			comboUiGroup.remove(comboPopup);
 			comboPopup.destroy();
 		});
-		
-		playerStrums.forEachAlive(function(strum){
-			playerStrums.remove(strum);
-			strum.destroy();
-		});
-
-		playerCovers.forEachAlive(function(cover){
-			playerCovers.remove(cover);
-			cover.destroy();
-		});
-
-		enemyStrums.forEachAlive(function(strum){
-			enemyStrums.remove(strum);
-			strum.destroy();
-		});
-
-		enemyCovers.forEachAlive(function(cover){
-			enemyCovers.remove(cover);
-			cover.destroy();
-		});
-
-		generateStaticArrows(0, true, skin);
-		generateStaticArrows(1, true, skin);
 		generateComboPopup(skin);
 	}
 
@@ -1396,14 +1227,6 @@ class PlayState extends MusicBeatState
 
 
 	override public function update(elapsed:Float) {
-		if(invulnTime > 0){
-			invulnTime -= elapsed;
-			//trace(invulnTime);
-			if(invulnTime <= 0){
-				invuln = false;
-			}
-		}
-
 		if(missTime > 0){
 			missTime -= elapsed;
 			//trace(missTime);
@@ -1411,27 +1234,9 @@ class PlayState extends MusicBeatState
 				canHit = false;
 			}
 		}
-
-		keyCheck();
-
-		for(i in 0...releaseTimes.length){
-			if(releaseTimes[i] != -1){
-				releaseTimes[i] += elapsed;
-				//trace(i + ": " + releaseTimes[i]);
-			}
-		}
-
-		if (!inCutscene && !endingSong){
-		 	if(!autoplay){
-		 		keyShit();
-			}
-		 	else{
-				keyShitAuto();
-		 	}
-		}
 		
 		if(FlxG.keys.pressed.SHIFT && FlxG.keys.justPressed.TAB && !isStoryMode){
-			autoplay = !autoplay;
+			playerStrums.autoplay = !playerStrums.autoplay;
 			preventScoreSaving = true;
 		}
 
@@ -1614,18 +1419,14 @@ class PlayState extends MusicBeatState
 		if (unspawnNotes[0] != null){
 			if (unspawnNotes[0].strumTime - Conductor.songPosition < 3000){
 				var dunceNote:Note = unspawnNotes[0];
-				notes.add(dunceNote);
+				if (dunceNote.mustPress)
+					playerStrums.notes.add(dunceNote);
+				else
+					enemyStrums.notes.add(dunceNote);
 
 				var index:Int = unspawnNotes.indexOf(dunceNote);
 				unspawnNotes.splice(index, 1);
-
-				sortNotes();
 			}
-		}
-
-		if (generatedMusic){
-			updateNote();
-			opponentNoteCheck();
 		}
 
 		#if debug
@@ -1665,143 +1466,6 @@ class PlayState extends MusicBeatState
 
 		openSubState(new GameOverSubstate(boyfriend.getSprite().getScreenPosition().x, boyfriend.getSprite().getScreenPosition().y, camFollowFinal.getScreenPosition().x, camFollowFinal.getScreenPosition().y, defaultCamZoom, character));
 		sectionStart = false;
-	}
-
-	function updateNote(){
-		notes.forEachAlive(function(daNote:Note)
-		{
-			var targetY:Float;
-			var targetX:Float;
-
-			var scrollSpeed:Float;
-
-			if(daNote.mustPress){
-				targetY = playerStrums.members[Math.floor(Math.abs(daNote.noteData))].y;
-				targetX = playerStrums.members[Math.floor(Math.abs(daNote.noteData))].x;
-			}
-			else{
-				targetY = enemyStrums.members[Math.floor(Math.abs(daNote.noteData))].y;
-				targetX = enemyStrums.members[Math.floor(Math.abs(daNote.noteData))].x;
-			}
-
-			if(Config.scrollSpeedOverride > 0){
-				scrollSpeed = Config.scrollSpeedOverride;
-			}
-			else{
-				scrollSpeed = FlxMath.roundDecimal(PlayState.SONG.speed, 2);
-			}
-
-			if(Config.downscroll){
-				daNote.y = (targetY + (Conductor.songPosition - daNote.strumTime) * (0.45 * scrollSpeed)) - daNote.yOffset;	
-				if(daNote.isSustainNote){
-					daNote.y -= daNote.height;
-					daNote.y += 125;
-
-					if ((!daNote.mustPress || daNote.wasGoodHit || daNote.prevNote.wasGoodHit && !daNote.canBeHit)
-						&& daNote.y - daNote.offset.y * daNote.scale.y + daNote.height >= (targetY + Note.swagWidth / 2)){
-						// Clip to strumline
-						var swagRect = new FlxRect(0, 0, daNote.frameWidth * 2, daNote.frameHeight * 2);
-						swagRect.height = (targetY + Note.swagWidth / 2 - daNote.y) / daNote.scale.y;
-						swagRect.y = daNote.frameHeight - swagRect.height;
-	
-						daNote.clipRect = swagRect;
-					}
-				}
-			}
-			else {
-				daNote.y = (targetY - (Conductor.songPosition - daNote.strumTime) * (0.45 * scrollSpeed)) + daNote.yOffset;
-				if(daNote.isSustainNote){
-					if ((!daNote.mustPress || daNote.wasGoodHit || daNote.prevNote.wasGoodHit && !daNote.canBeHit)
-						&& daNote.y + daNote.offset.y * daNote.scale.y <= (targetY + Note.swagWidth / 2)){
-						// Clip to strumline
-						var swagRect = new FlxRect(0, 0, daNote.width / daNote.scale.x, daNote.height / daNote.scale.y);
-						swagRect.y = (targetY + Note.swagWidth / 2 - daNote.y) / daNote.scale.y;
-						swagRect.height -= swagRect.y;
-
-						daNote.clipRect = swagRect;
-					}
-				}
-			}
-
-			daNote.x = targetX + daNote.xOffset;
-
-			if(daNote.tooLate){
-				if (!daNote.didTooLateAction && !daNote.isFake){
-					noteMiss(daNote.noteData, daNote.missCallback, Scoring.MISS_DAMAGE_AMOUNT, true, true);
-					if(canChangeVocalVolume){ vocals.volume = 0; }
-					daNote.didTooLateAction = true;
-				}
-			}
-
-			if (Config.downscroll ? (daNote.y > targetY + daNote.height + 50) : (daNote.y < targetY - daNote.height - 50)){
-				if (daNote.tooLate || daNote.wasGoodHit){
-								
-					daNote.active = false;
-					daNote.visible = false;
-					daNote.destroy();
-				}
-			}
-		});
-	}
-
-	function opponentNoteCheck(){
-		anyOpponentNoteInRange = false;
-		notes.forEachAlive(function(daNote:Note){
-
-			if(daNote.inRange && !daNote.mustPress) {anyOpponentNoteInRange = true;}
-
-			if (!daNote.mustPress && daNote.canBeHit && !daNote.wasGoodHit){
-
-				daNote.wasGoodHit = true;
-
-				daNote.hitCallback(daNote, dad);
-				healthAdjustOverride = null;
-
-				enemyStrums.forEach(function(spr:FlxSprite){
-					if (Math.abs(daNote.noteData) == spr.ID){
-						spr.animation.play('confirm', true);
-					}
-				});
-
-				dad.holdTimer = 0;
-
-				switch(vocalType){
-					case splitVocalTrack:
-						if(canChangeVocalVolume){ vocalsOther.volume = 1; }
-					case combinedVocalTrack:
-						if(canChangeVocalVolume){ vocals.volume = 1;}
-					default:
-				}
-
-				if(dad.characterInfo.info.functions.noteHit != null){
-					dad.characterInfo.info.functions.noteHit(dad, daNote);
-				}
-				stage.noteHit(dad, daNote);
-				for(script in scripts){ script.noteHit(dad, daNote); }
-					
-
-				if(!daNote.isSustainNote){
-					daNote.destroy();
-				}
-				else{
-					if(daNote.prevNote == null || !daNote.prevNote.isSustainNote){
-						enemyCovers.forEach(function(cover:NoteHoldCover) {
-							if (Math.abs(daNote.noteData) == cover.noteDirection) {
-								cover.start();
-							}
-						});
-					}
-					else if(daNote.isSustainEnd){
-						enemyCovers.forEach(function(cover:NoteHoldCover) {
-							if (Math.abs(daNote.noteData) == cover.noteDirection) {
-								cover.end(false);
-							}
-						});
-					}
-				}
-
-			}
-		});
 	}
 
 	function endSongCutsceneCheck():Void{
@@ -2029,211 +1693,6 @@ class PlayState extends MusicBeatState
 
 	}
 
-	private function keyShit():Void{
-
-		var controlArray:Array<Bool> = [leftPress, downPress, upPress, rightPress];
-
-		anyPlayerNoteInRange = false;
-		notes.forEachAlive(function(daNote:Note){
-			if(!anyPlayerNoteInRange && daNote.inRange && daNote.mustPress){anyPlayerNoteInRange = true;}
-		});
-
-		if ((upPress || rightPress || downPress || leftPress) && generatedMusic){
-			
-			boyfriend.holdTimer = 0;
-
-			var possibleNotes:Array<Note> = [];
-
-			var ignoreList:Array<Int> = [];
-
-			notes.forEachAlive(function(daNote:Note) {
-				if (daNote.canBeHit && daNote.mustPress && !daNote.tooLate) {
-					// the sorting probably doesn't need to be in here? who cares lol
-					possibleNotes.push(daNote);
-					possibleNotes.sort((a, b) -> Std.int(a.strumTime - b.strumTime));
-
-					ignoreList.push(daNote.noteData);
-
-					if(Config.ghostTapType == 1){
-						setCanMiss();
-					}
-				}
-			});
-
-			var directionsAccounted = [false,false,false,false];
-
-			if (possibleNotes.length > 0 && !forceMissNextNote){
-				for(note in possibleNotes){
-					if (controlArray[note.noteData] && !directionsAccounted[note.noteData]){
-						goodNoteHit(note);
-						directionsAccounted[note.noteData] = true;
-					}
-				}
-				for(i in 0...4){
-					if(!ignoreList.contains(i) && controlArray[i]){
-						badNoteCheck(i);
-					}
-				}
-			}
-			else{
-				badNoteCheck();
-			}
-		}
-		
-		notes.forEachAlive(function(daNote:Note) {
-			if ((upHold || rightHold || downHold || leftHold) && generatedMusic){
-				if (daNote.canBeHit && daNote.mustPress && daNote.isSustainNote && !daNote.wasGoodHit)
-				{
-
-					boyfriend.holdTimer = 0;
-
-					switch (daNote.noteData)
-					{
-						// NOTES YOU ARE HOLDING
-						case 2:
-							if (upHold)
-								goodNoteHit(daNote);
-						case 3:
-							if (rightHold)
-								goodNoteHit(daNote);
-						case 1:
-							if (downHold)
-								goodNoteHit(daNote);
-						case 0:
-							if (leftHold)
-								goodNoteHit(daNote);
-					}
-				}
-			}
-
-			//Guitar Hero Type Held Notes
-			if(daNote.isSustainNote && daNote.mustPress){
-
-				//This is for all subsequent released notes.
-				if(daNote.prevNote.tooLate && !daNote.prevNote.wasGoodHit){
-					daNote.tooLate = true;
-					daNote.destroy();
-					noteMiss(daNote.noteData, daNote.missCallback, Scoring.HOLD_DROP_DMAMGE_PER_NOTE * (daNote.isFake ? 0 : 1), false, false, true, Scoring.HOLD_DROP_PENALTY);
-					//updateAccuracyOld();
-				}
-
-				//This is for the first released note.
-				if(daNote.prevNote.wasGoodHit && !daNote.wasGoodHit){
-
-					if(releaseTimes[daNote.noteData] >= releaseBufferTime){
-						noteMiss(daNote.noteData, daNote.missCallback, Scoring.HOLD_DROP_INITAL_DAMAGE, true, false, true, Scoring.HOLD_DROP_INITIAL_PENALTY);
-						if(canChangeVocalVolume){ vocals.volume = 0; }
-						daNote.tooLate = true;
-						daNote.destroy();
-						boyfriend.holdTimer = 0;
-						//updateAccuracyOld();
-
-						playerCovers.forEach(function(cover:NoteHoldCover) {
-							if (Math.abs(daNote.noteData) == cover.noteDirection) {
-								cover.end(false);
-							}
-						});
-
-						var recursiveNote = daNote;
-						while(recursiveNote.prevNote != null && recursiveNote.prevNote.exists && recursiveNote.prevNote.isSustainNote){
-							recursiveNote.prevNote.visible = false;
-							recursiveNote = recursiveNote.prevNote;
-						}
-					}
-					
-				}
-			}
-		});
-
-		if (boyfriend.holdTimer > Conductor.stepCrochet * boyfriend.stepsUntilRelease * 0.001 && !upHold && !downHold && !rightHold && !leftHold && boyfriend.canAutoAnim && (Character.PREVENT_SHORT_IDLE ? !anyPlayerNoteInRange : true)){
-			if (boyfriend.isSinging){
-				if(Character.USE_IDLE_END){ 
-					boyfriend.idleEnd(); 
-				}
-				else{ 
-					boyfriend.dance(); 
-					boyfriend.danceLockout = true;
-				}
-			}	
-		}
-
-		playerStrums.forEach(function(spr:FlxSprite){
-			switch (spr.ID){
-				case 2:
-					if (upPress && spr.animation.curAnim.name != 'confirm'){
-						spr.animation.play('pressed');
-					}
-					if (!upHold){
-						spr.animation.play('static');
-					}
-				case 3:
-					if (rightPress && spr.animation.curAnim.name != 'confirm'){
-						spr.animation.play('pressed');
-					}
-					if (!rightHold){
-						spr.animation.play('static');
-					}
-				case 1:
-					if (downPress && spr.animation.curAnim.name != 'confirm'){
-						spr.animation.play('pressed');
-					}
-					if (!downHold){
-						spr.animation.play('static');
-					}
-				case 0:
-					if (leftPress && spr.animation.curAnim.name != 'confirm'){
-						spr.animation.play('pressed');
-					}
-					if (!leftHold){
-						spr.animation.play('static');
-					}
-			}
-
-		});
-	}
-
-	private function keyShitAuto():Void{
-
-		var hitNotes:Array<Note> = [];
-
-		anyPlayerNoteInRange = false;
-
-		notes.forEachAlive(function(daNote:Note){
-			if(daNote.inRange && daNote.mustPress){anyPlayerNoteInRange = true;}
-
-			if (!forceMissNextNote && !daNote.wasGoodHit && daNote.mustPress && daNote.strumTime < Conductor.songPosition + Conductor.safeZoneOffset * (!daNote.isSustainNote ? 0.125 : (daNote.prevNote.wasGoodHit ? 1 : 0))){
-				hitNotes.push(daNote);
-			}
-		});
-
-		if (boyfriend.holdTimer > Conductor.stepCrochet * boyfriend.stepsUntilRelease * 0.001 && !upHold && !downHold && !rightHold && !leftHold && boyfriend.canAutoAnim && (Character.PREVENT_SHORT_IDLE ? !anyPlayerNoteInRange : true)){
-			if (boyfriend.isSinging){
-				if(Character.USE_IDLE_END){ 
-					boyfriend.idleEnd(); 
-				}
-				else{ 
-					boyfriend.dance(); 
-					boyfriend.danceLockout = true;
-				}
-			}
-		}
-
-		for(x in hitNotes){
-
-			boyfriend.holdTimer = 0;
-
-			goodNoteHit(x);
-			
-			playerStrums.forEach(function(spr:FlxSprite){
-				if (Math.abs(x.noteData) == spr.ID){
-					spr.animation.play('confirm', true);
-				}
-			});
-
-		}
-
-	}
-
 	function noteMiss(direction:Int = 1, callback:(Int, Character)->Void, ?healthLoss:Float, ?playAudio:Bool = true, ?countMiss:Bool = true, ?dropCombo:Bool = true, ?scoreAdjust:Null<Int>):Void{
 
 		if(scoreAdjust == null){
@@ -2321,17 +1780,8 @@ class PlayState extends MusicBeatState
 
 			if(note.isFake){
 				note.wasGoodHit = true;
-				if(note.prevNote == null || !note.prevNote.isSustainNote){
-					playerCovers.forEach(function(cover:NoteHoldCover) {
-						if (Math.abs(note.noteData) == cover.noteDirection) {
-							cover.start();
-						}
-					});
-				}
 				return;
 			}
-			
-			note.hitCallback(note, boyfriend);
 
 			if (!note.isSustainNote){
 				popUpScore(note, healthAdjustOverride == null);
@@ -2362,22 +1812,6 @@ class PlayState extends MusicBeatState
 
 			if(!note.isSustainNote){
 				note.destroy();
-			}
-			else{
-				if(note.prevNote == null || !note.prevNote.isSustainNote){
-					playerCovers.forEach(function(cover:NoteHoldCover) {
-						if (Math.abs(note.noteData) == cover.noteDirection) {
-							cover.start();
-						}
-					});
-				}
-				else if(note.isSustainEnd){
-					playerCovers.forEach(function(cover:NoteHoldCover) {
-						if (Math.abs(note.noteData) == cover.noteDirection) {
-							cover.end(true);
-						}
-					});
-				}
 			}
 
 		}
@@ -2840,16 +2274,6 @@ class PlayState extends MusicBeatState
 
 	static function inRange(a:Float, b:Float, tolerance:Float):Bool{
 		return (a <= b + tolerance && a >= b - tolerance);
-	}
-
-	function sortNotes(){
-		if (generatedMusic){
-			notes.sort(noteSortThing, FlxSort.DESCENDING);
-		}
-	}
-
-	public static inline function noteSortThing(Order:Int, Obj1:Note, Obj2:Note):Int{
-		return FlxSort.byValues(Order, Obj1.strumTime, Obj2.strumTime);
 	}
 
 	function songPreload():Void {
