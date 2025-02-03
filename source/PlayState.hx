@@ -2242,6 +2242,8 @@ class PlayState extends MusicBeatState
 
 		if (!startingSong){
 
+			if(canChangeVocalVolume){ vocals.volume = 0; }
+
 			if(dropCombo){
 				comboBreak();
 			}
@@ -2348,12 +2350,6 @@ class PlayState extends MusicBeatState
 				health += healthAdjustOverride;
 				healthAdjustOverride = null;
 			}
-
-			playerStrums.forEach(function(spr:FlxSprite) {
-				if (Math.abs(note.noteData) == spr.ID) {
-					spr.animation.play('confirm', true);
-				}
-			});
 
 			note.wasGoodHit = true;
 			if(canChangeVocalVolume){ vocals.volume = 1; }

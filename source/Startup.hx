@@ -29,7 +29,7 @@ using StringTools;
 class Startup extends FlxState
 {
 
-	var nextState:FlxState = new TitleVideo();
+	var nextState:FlxState = new debug.InputDebug();
 	//var nextState:FlxState = new modding.ModManagerState();
 	//var nextState:FlxState = new results.ResultsState(null, "Results Test", "PicoResults");
 
