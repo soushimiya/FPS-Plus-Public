@@ -24,7 +24,7 @@ class StrumSprite extends flixel.FlxSprite
 @:access(PlayState) //Fuck that
 class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 {
-	public var notes:FlxTypedGroup<Note>;
+	public var notes:FlxTypedGroup<Note> = new FlxTypedGroup<Note>();
 
 	public var character:Character = null;
 
@@ -45,8 +45,6 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 		{
 			extraData = [];
 		}
-
-		notes = new FlxTypedGroup<Note>();
 
 		var hudNoteSkin:HudNoteSkinBase = new HudNoteSkinBase(skin);
 
@@ -160,6 +158,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 		if (PlayState.instance.generatedMusic && !PlayState.instance.inCutscene && !PlayState.instance.endingSong)
 		{
+			updateNote();
 			checkInput();
 		}
 	}
@@ -183,7 +182,6 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 				}
 			});
 		}
-		// Actual Input Systems
 		else if (anyKeyPressing())
 		{
 			character.holdTimer = 0;
@@ -260,12 +258,13 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			}
 		}
 
-		for(x in hitNotes){
-			onHit.dispatch(x);
-			x.hitCallback(x, character);
+		for(note in hitNotes){
+			onHit.dispatch(note);
+			note.hitCallback(note, character);
+			note.destroy();
 			
 			forEach(function(spr:flixel.FlxSprite){
-				if (Math.abs(x.noteData) == spr.ID){
+				if (Math.abs(note.noteData) == spr.ID){
 					spr.animation.play('confirm', true);
 				}
 			});

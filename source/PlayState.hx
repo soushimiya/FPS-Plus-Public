@@ -592,8 +592,19 @@ class PlayState extends MusicBeatState
 		enemyStrums.character = dad;
 		enemyStrums.autoplay = true;
 
+		if(Config.scrollSpeedOverride > 0){
+			playerStrums.scrollSpeed = Config.scrollSpeedOverride;
+			enemyStrums.scrollSpeed = Config.scrollSpeedOverride;
+		}
+		else{
+			playerStrums.scrollSpeed = FlxMath.roundDecimal(PlayState.SONG.speed, 2);
+			enemyStrums.scrollSpeed = FlxMath.roundDecimal(PlayState.SONG.speed, 2);
+		}
+
 		add(playerStrums);
+		add(playerStrums.notes);
 		add(enemyStrums);
+		add(enemyStrums.notes);
 
 		generateSong(SONG.song);
 
@@ -658,7 +669,9 @@ class PlayState extends MusicBeatState
 		if(Config.showCaptions){ add(ccText); } 
 
 		playerStrums.cameras = [camHUD];
+		playerStrums.notes.cameras = [camHUD];
 		enemyStrums.cameras = [camHUD];
+		enemyStrums.notes.cameras = [camHUD];
 		healthBar.cameras = [camHUD];
 		healthBarBG.cameras = [camHUD];
 		iconP1.cameras = [camHUD];
