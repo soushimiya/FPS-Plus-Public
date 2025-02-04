@@ -51,9 +51,7 @@ class Note extends FlxSprite
 	inline public static final BLUE_NOTE:Int = 1;
 	inline public static final RED_NOTE:Int = 3;
 
-	public var adjusted:Bool = false;
-
-	public function new(_strumTime:Float, _noteData:Int, _type:String, ?_editor = false, ?_prevNote:Note, ?_sustainNote:Bool = false){
+	public function new(_strumTime:Float, _noteData:Int, _type:String, ?_editor = false, ?_prevNote:Note, ?_sustainNote:Bool = false, ?scrollSpeed:Float = 1){
 		
 		super();
 
@@ -181,13 +179,8 @@ class Note extends FlxSprite
 				prevNote.isSustainEnd = false;
 
 				prevNote.animation.play("hold");
-				
-				var speed = PlayState.SONG.speed;
 
-				if(Config.scrollSpeedOverride > 0){
-					speed = Config.scrollSpeedOverride;
-				}
-
+				prevNote.scale.y *= Conductor.stepCrochet / 100 * 1.485 * scrollSpeed;
 				prevNote.scale.y *= noteSkin.info.holdScaleAdjust;
 				prevNote.scale.y *= prevNote.isFake ? 0.5 : 1;
 				prevNote.updateHitbox();
@@ -202,13 +195,7 @@ class Note extends FlxSprite
 
 	}
 
-	function adjustScale(speed:Float)
-	{
-
-	}
-
 	override function update(elapsed:Float){
-
 		super.update(elapsed);
 
 		if(!editor){

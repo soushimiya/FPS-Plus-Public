@@ -4,7 +4,6 @@ import note.*;
 import flixel.math.FlxRect;
 import flixel.group.FlxSpriteGroup;
 import flixel.util.FlxSignal;
-import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.util.FlxSort;
 import flixel.FlxG;
 
@@ -22,7 +21,7 @@ class StrumSprite extends flixel.FlxSprite
 @:access(PlayState) //Fuck you
 class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 {
-	public var notes:FlxTypedGroup<Note> = new FlxTypedGroup<Note>();
+	public var notes:FlxTypedSpriteGroup<Note> = new FlxTypedSpriteGroup<Note>();
 
 	public var character:Character = null;
 
@@ -121,6 +120,47 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 		}
 	}
 
+	public function addNotes(notesArray:Array<Array<Dynamic>>){
+		for (note in notesArray)
+		{
+			var daNoteData:Int = Std.int(note[1] % 4);
+
+			var oldNote:Note = null;
+			if (notes.length > 0){
+				oldNote = notes.members[Std.int(notes.length - 1)];
+			}
+
+			var newNote:Note = new Note(note[0], daNoteData, note[3], false, oldNote, false, scrollSpeed);
+			newNote.sustainLength = note[2];
+			newNote.scrollFactor.set(0, 0);
+
+			setNoteHitCallback(newNote);
+			notes.add(newNote);
+
+			var susLength:Float = newNote.sustainLength / Conductor.stepCrochet;
+			if(Math.round(susLength) > 0){
+				for (susNote in 0...(Math.round(susLength) + 1)){
+					oldNote = notes.members[Std.int(notes.length - 1)];
+	
+					var makeFake = false;
+					var timeAdd = 0.0;
+					if(susNote == 0){ 
+						makeFake = true; 
+						timeAdd = 0.1; 
+					}
+	
+					var sustainNote:Note = new Note(note[0] + (Conductor.stepCrochet * susNote) + timeAdd, daNoteData, note[3], false, oldNote, true, scrollSpeed);
+					sustainNote.isFake = makeFake;
+					sustainNote.scrollFactor.set();
+
+					setNoteHitCallback(sustainNote);
+					notes.add(sustainNote);
+				}
+			}
+
+		}
+	}
+
 	override public function update(elapsed:Float)
 	{
 		super.update(elapsed);
@@ -176,39 +216,6 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			});
 		}
 		else{
-			if (anyKeyPressing())
-			{
-				character.holdTimer = 0;
-
-				var possibleNotes:Array<Note> = [];
-				var ignoreList:Array<Int> = [];
-		
-				notes.forEachAlive(function(daNote:Note) {
-					if (daNote.canBeHit && !daNote.tooLate) {
-						possibleNotes.push(daNote);
-						ignoreList.push(daNote.noteData);
-					}
-				});
-		
-				var directionsAccounted:Array<Bool> = [false,false,false,false];
-		
-				if (possibleNotes.length > 0){
-					for(note in possibleNotes){
-						if (members[note.noteData].state != RELEASE && !directionsAccounted[note.noteData]){
-							hitNotes.push(note);
-							directionsAccounted[note.noteData] = true;
-						}
-					}
-					for(i in 0...4){
-						if(!ignoreList.contains(i) && members[i].state != RELEASE){
-							PlayState.instance.badNoteCheck(i);
-						}
-					}
-				}
-				/*
-					if (Config.ghostTapType == 0){ badNoteCheck(i); }
-				*/
-			}
 		}
 
 		if (character.holdTimer > Conductor.stepCrochet * character.stepsUntilRelease * 0.001 && !anyKeyPressing() && character.canAutoAnim){
@@ -235,15 +242,22 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			}
 			PlayState.instance.stage.noteHit(character, note);
 			for(script in PlayState.instance.scripts){ script.noteHit(character, note); }
-
-			note.destroy();
 			
 			forEach(function(spr:flixel.FlxSprite){
 				if (Math.abs(note.noteData) == spr.ID){
 					spr.animation.play('confirm', true);
 				}
 			});
+
+			if (!note.isSustainNote){
+				note.destroy();
+			}
 		}
+	}
+
+	private function setNoteHitCallback(note:Note):Void{
+		// call me lazy
+		PlayState.instance.setNoteHitCallback(note);
 	}
 
 	private function updateNote()
@@ -251,7 +265,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 		if (!FlxG.state.members.contains(notes))
 		{
 			FlxG.state.add(notes);
-			notes.cameras = [PlayState.instance.camHUD];
+			notes.cameras = cameras;
 		}
 		notes.forEachAlive(function(daNote:Note)
 		{
@@ -274,13 +288,8 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			}
 
 			if (daNote.isSustainNote)
-			{
-				if (!daNote.adjusted){
-					daNote.adjusted = true;
-					daNote.scale.y *= Conductor.stepCrochet / 100 * 1.485 * scrollSpeed;
-				}
-				
-				if ((!daNote.mustPress || daNote.wasGoodHit || daNote.prevNote.wasGoodHit && !daNote.canBeHit)
+			{	
+				if ((daNote.wasGoodHit || daNote.prevNote.wasGoodHit && !daNote.canBeHit)
 					&& daNote.y + daNote.offset.y * daNote.scale.y <= (targetY + Note.swagWidth / 2))
 				{
 					// Clip to strumline

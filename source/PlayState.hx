@@ -177,8 +177,6 @@ class PlayState extends MusicBeatState
 	private var autoplay:Bool = false;
 	public var preventScoreSaving:Bool = false;
 
-	public var unspawnNotes:Array<Note> = [];
-
 	public var anyPlayerNoteInRange:Bool = false;
 	public var anyOpponentNoteInRange:Bool = false;
 
@@ -1010,10 +1008,9 @@ class PlayState extends MusicBeatState
 
 	private function generateSong(dataPath:String):Void {
 
-		var songData = SONG;
-		Conductor.changeBPM(songData.bpm);
+		Conductor.changeBPM(SONG.bpm);
 
-		curSong = songData.song;
+		curSong = SONG.song;
 
 		switch(vocalType){
 			case splitVocalTrack:
@@ -1031,86 +1028,20 @@ class PlayState extends MusicBeatState
 
 		FlxG.sound.list.add(vocals);
 
-		var noteData:Array<SwagSection>;
+		// I think I'll need to rework the chart format in the future, as the sections currently make little sense.
+		var bfNotes:Array<Array<Dynamic>> = [];
+		var dadNotes:Array<Array<Dynamic>> = [];
 
-		// NEW SHIT
-		noteData = songData.notes;
-
-		var playerCounter:Int = 0;
-
-		var daBeats:Int = 0; // Not exactly representative of 'daBeats' lol, just how much it has looped
-
-		for (section in noteData)
-		{
-			if(sectionStart && daBeats < sectionStartPoint){
-				daBeats++;
-				continue;
-			}
-
-			for (songNotes in section.sectionNotes)
-			{
-				var daStrumTime:Float = songNotes[0];
-				var daNoteData:Int = Std.int(songNotes[1] % 4);
-				var daNoteType:String = songNotes[3];
-
-				var gottaHitNote:Bool = section.mustHitSection;
-
-				if (songNotes[1] > 3){
-					gottaHitNote = !section.mustHitSection;
-				}
-
-				var oldNote:Note;
-				if (unspawnNotes.length > 0){
-					oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
-				}
-				else{
-					oldNote = null;
-				}
-
-				var swagNote:Note = new Note(daStrumTime, daNoteData, daNoteType, false, oldNote);
-				swagNote.sustainLength = songNotes[2];
-				swagNote.scrollFactor.set(0, 0);
-
-				var susLength:Float = swagNote.sustainLength;
-
-				susLength = susLength / Conductor.stepCrochet;
-
-				swagNote.mustPress = gottaHitNote;
-
-				setNoteHitCallback(swagNote);
-				
-				unspawnNotes.push(swagNote);
-
-				if(Math.round(susLength) > 0){
-					for (susNote in 0...(Math.round(susLength) + 1)){
-						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
-	
-						var makeFake = false;
-						var timeAdd = 0.0;
-						if(susNote == 0){ 
-							makeFake = true; 
-							timeAdd = 0.1; 
-						}
-	
-						var sustainNote:Note = new Note(daStrumTime + (Conductor.stepCrochet * susNote) + timeAdd, daNoteData, daNoteType, false, oldNote, true);
-						sustainNote.isFake = makeFake;
-						sustainNote.scrollFactor.set();
-						sustainNote.mustPress = gottaHitNote;
-
-						setNoteHitCallback(sustainNote);
-
-						unspawnNotes.push(sustainNote);
-					}
-				}
-
-			}
-			daBeats++;
-		}
-
-		// trace(unspawnNotes.length);
-		// playerCounter += 1;
-
-		unspawnNotes.sort(sortByShit);
+        for (section in SONG.notes){
+            for (note in section.sectionNotes){
+                if (note[1] > 3 && !section.mustHitSection || note[1] < 4 && section.mustHitSection)
+                    bfNotes.push(note);
+				else
+					dadNotes.push(note);
+            }
+        }
+		playerStrums.addNotes(bfNotes);
+		enemyStrums.addNotes(dadNotes);
 
 		generatedMusic = true;
 	}
@@ -1429,19 +1360,6 @@ class PlayState extends MusicBeatState
 		}
 
 		if (health <= 0){ openGameOver(); }
-
-		if (unspawnNotes[0] != null){
-			if (unspawnNotes[0].strumTime - Conductor.songPosition < 3000){
-				var dunceNote:Note = unspawnNotes[0];
-				if (dunceNote.mustPress)
-					playerStrums.notes.add(dunceNote);
-				else
-					enemyStrums.notes.add(dunceNote);
-
-				var index:Int = unspawnNotes.indexOf(dunceNote);
-				unspawnNotes.splice(index, 1);
-			}
-		}
 
 		#if debug
 		if (FlxG.keys.justPressed.ONE)
