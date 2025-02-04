@@ -51,6 +51,8 @@ class Note extends FlxSprite
 	inline public static final BLUE_NOTE:Int = 1;
 	inline public static final RED_NOTE:Int = 3;
 
+	public var adjusted:Bool = false;
+
 	public function new(_strumTime:Float, _noteData:Int, _type:String, ?_editor = false, ?_prevNote:Note, ?_sustainNote:Bool = false){
 		
 		super();
@@ -164,8 +166,6 @@ class Note extends FlxSprite
 			alpha = 0.6;
 
 			xOffset += width / 2;
-			
-			flipY = Config.downscroll;
 
 			animation.play("holdEnd");
 
@@ -188,11 +188,8 @@ class Note extends FlxSprite
 					speed = Config.scrollSpeedOverride;
 				}
 
-				var mult:Float = prevNote.isFake ? 0.5 : 1;
-
-				prevNote.scale.y *= Conductor.stepCrochet / 100 * 1.485 * speed;
 				prevNote.scale.y *= noteSkin.info.holdScaleAdjust;
-				prevNote.scale.y *= mult;
+				prevNote.scale.y *= prevNote.isFake ? 0.5 : 1;
 				prevNote.updateHitbox();
 
 				if(prevNote.isFake){ prevNote.yOffset += prevNote.height; }
@@ -202,6 +199,11 @@ class Note extends FlxSprite
 		if(noteSkin.info.functions.create != null){
 			noteSkin.info.functions.create(this);
 		}
+
+	}
+
+	function adjustScale(speed:Float)
+	{
 
 	}
 

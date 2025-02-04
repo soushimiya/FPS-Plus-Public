@@ -5,6 +5,7 @@ import flixel.math.FlxRect;
 import flixel.group.FlxSpriteGroup;
 import flixel.util.FlxSignal;
 import flixel.group.FlxGroup.FlxTypedGroup;
+import flixel.util.FlxSort;
 import flixel.FlxG;
 
 using StringTools;
@@ -16,17 +17,16 @@ class StrumSprite extends flixel.FlxSprite
 	public var releaseTime:Float = -1;
 
 	public var state:StrumState = RELEASE;
-
-	public function isPressing():Bool
-		return (state == PRESS || state == HOLD);
 }
 
-@:access(PlayState) //Fuck that
+@:access(PlayState) //Fuck you
 class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 {
 	public var notes:FlxTypedGroup<Note> = new FlxTypedGroup<Note>();
 
 	public var character:Character = null;
+
+	public var inputs:Array<String> = ["gameplayUp", "gameplayDown", "gameplayLeft", "gameplayRight"];
 
 	public var autoplay:Bool = false;
 	public var downscroll:Bool = false;
@@ -35,7 +35,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 	private static final RELEASE_BUFFER = (2 / 60);
 
 	public var onHit = new FlxTypedSignal<(Note) -> Void>();
-	//public var onMiss = new FlxTypedSignal<(?Int, ?Void, ?Float, ?Bool, ?Bool, ?Bool, Null<Int>) -> Void>();
+	// public var onMiss = new FlxTypedSignal<(Int, Void, Float, Bool, Bool, Bool, Int) -> Void>();
 
 	override public function new(x:Float, y:Float, skin:String = "Default", initType:StrumInitType = DEFAULT, ?extraData:Map<String, Dynamic>)
 	{
@@ -70,12 +70,9 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 			arrow.animation.finishCallback = function(name:String)
 			{
-				if (autoplay)
+				if (name == "confirm")
 				{
-					if (name == "confirm")
-					{
-						if (arrow.state != HOLD){ arrow.animation.play('static', true); }
-					}
+					if (arrow.state != HOLD){ arrow.animation.play('static', true); }
 				}
 			}
 
@@ -128,12 +125,10 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 	{
 		super.update(elapsed);
 
-		final inputMaps:Array<String> = ["gameplayUp", "gameplayDown", "gameplayLeft", "gameplayRight"];
-
-		for (i in 0...inputMaps.length)
+		for (i in 0...inputs.length)
 		{
 			var curStrum = members[i];
-			curStrum.inputTime = Binds.pressed(inputMaps[i]) ? curStrum.inputTime + 1 : 0;
+			curStrum.inputTime = Binds.pressed(inputs[i]) ? curStrum.inputTime + 1 : 0;
 
 			if (curStrum.inputTime == 1)
 			{
@@ -170,9 +165,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 		var anyNoteInRange:Bool = false;
 
 		// Botplay Stuff
-		if (autoplay)
-		{
-			character.holdTimer = 0;
+		if (autoplay){
 			notes.forEachAlive(function(daNote:Note)
 			{
 				if (daNote.inRange){ anyNoteInRange = true; }
@@ -182,85 +175,67 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 				}
 			});
 		}
-		else if (anyKeyPressing())
-		{
-			character.holdTimer = 0;
+		else{
+			if (anyKeyPressing())
+			{
+				character.holdTimer = 0;
 
-			var possibleNotes:Array<Note> = [];
-			var ignoreList:Array<Int> = [];
-
-			notes.forEachAlive(function(daNote:Note) {
-				if (daNote.canBeHit && !daNote.tooLate) {
-					possibleNotes.push(daNote);
-					ignoreList.push(daNote.noteData);
-				}
-			});
-
-			var directionsAccounted:Array<Bool> = [false,false,false,false];
-
-			if (possibleNotes.length > 0){
-				for(note in possibleNotes){
-					if (members[note.noteData].isPressing() && !directionsAccounted[note.noteData]){
-						hitNotes.push(note);
-						directionsAccounted[note.noteData] = true;
+				var possibleNotes:Array<Note> = [];
+				var ignoreList:Array<Int> = [];
+		
+				notes.forEachAlive(function(daNote:Note) {
+					if (daNote.canBeHit && !daNote.tooLate) {
+						possibleNotes.push(daNote);
+						ignoreList.push(daNote.noteData);
 					}
-				}
-				for(i in 0...4){
-					if(!ignoreList.contains(i) && members[i].isPressing()){
-						PlayState.instance.badNoteCheck(i);
-					}
-				}
-			}
-			/*
-			if (Config.ghostTapType == 0){ badNoteCheck(i); }
-			*/
-		}
-
-		notes.forEachAlive(function(daNote:Note) {
-			//Guitar Hero Type Held Notes
-			if(daNote.isSustainNote){
-
-				//This is for all subsequent released notes.
-				if(daNote.prevNote.tooLate && !daNote.prevNote.wasGoodHit){
-					daNote.tooLate = true;
-					daNote.destroy();
-					//onMiss.dispatch(daNote.noteData, daNote.missCallback, Scoring.HOLD_DROP_DMAMGE_PER_NOTE * (daNote.isFake ? 0 : 1), false, false, true, Scoring.HOLD_DROP_PENALTY);
-				}
-
-				//This is for the first released note.
-				if(daNote.prevNote.wasGoodHit && !daNote.wasGoodHit){
-
-					if(members[daNote.noteData].releaseTime >= RELEASE_BUFFER){
-						//onMiss.dispatch(daNote.noteData, daNote.missCallback, Scoring.HOLD_DROP_INITAL_DAMAGE, true, false, true, Scoring.HOLD_DROP_INITIAL_PENALTY);
-						daNote.tooLate = true;
-						daNote.destroy();
-						character.holdTimer = 0;
-
-						var recursiveNote = daNote;
-						while(recursiveNote.prevNote != null && recursiveNote.prevNote.exists && recursiveNote.prevNote.isSustainNote){
-							recursiveNote.prevNote.visible = false;
-							recursiveNote = recursiveNote.prevNote;
+				});
+		
+				var directionsAccounted:Array<Bool> = [false,false,false,false];
+		
+				if (possibleNotes.length > 0){
+					for(note in possibleNotes){
+						if (members[note.noteData].state != RELEASE && !directionsAccounted[note.noteData]){
+							hitNotes.push(note);
+							directionsAccounted[note.noteData] = true;
 						}
 					}
-					
+					for(i in 0...4){
+						if(!ignoreList.contains(i) && members[i].state != RELEASE){
+							PlayState.instance.badNoteCheck(i);
+						}
+					}
 				}
+				/*
+					if (Config.ghostTapType == 0){ badNoteCheck(i); }
+				*/
 			}
-		});
+		}
 
-		if (character.isSinging && character.holdTimer > Conductor.stepCrochet * character.stepsUntilRelease * 0.001 && !anyKeyHolding() && character.canAutoAnim && (Character.PREVENT_SHORT_IDLE ? !anyNoteInRange : true))
-		{
-			if (Character.USE_IDLE_END){
-				character.idleEnd();
-			}
-			else{
-				character.dance();
-				character.danceLockout = true;
+		if (character.holdTimer > Conductor.stepCrochet * character.stepsUntilRelease * 0.001 && !anyKeyPressing() && character.canAutoAnim){
+			if (character.isSinging){
+				if(Character.USE_IDLE_END){ 
+					character.idleEnd();
+				}
+				else{ 
+					character.dance(); 
+					character.danceLockout = true;
+				}
 			}
 		}
 
 		for(note in hitNotes){
+			character.holdTimer = 0;
+			note.wasGoodHit = true;
+
 			onHit.dispatch(note);
+
 			note.hitCallback(note, character);
+			if(character.characterInfo.info.functions.noteHit != null){
+				character.characterInfo.info.functions.noteHit(character, note);
+			}
+			PlayState.instance.stage.noteHit(character, note);
+			for(script in PlayState.instance.scripts){ script.noteHit(character, note); }
+
 			note.destroy();
 			
 			forEach(function(spr:flixel.FlxSprite){
@@ -273,6 +248,11 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 	private function updateNote()
 	{
+		if (!FlxG.state.members.contains(notes))
+		{
+			FlxG.state.add(notes);
+			notes.cameras = [PlayState.instance.camHUD];
+		}
 		notes.forEachAlive(function(daNote:Note)
 		{
 			var targetX:Float = members[Math.floor(Math.abs(daNote.noteData))].x;
@@ -283,6 +263,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 				daNote.y = (targetY + (Conductor.songPosition - daNote.strumTime) * (0.45 * scrollSpeed)) - daNote.yOffset;
 				if (daNote.isSustainNote)
 				{
+					daNote.flipY = true;
 					daNote.y -= daNote.height;
 					daNote.y += 125;
 				}
@@ -294,6 +275,11 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 			if (daNote.isSustainNote)
 			{
+				if (!daNote.adjusted){
+					daNote.adjusted = true;
+					daNote.scale.y *= Conductor.stepCrochet / 100 * 1.485 * scrollSpeed;
+				}
+				
 				if ((!daNote.mustPress || daNote.wasGoodHit || daNote.prevNote.wasGoodHit && !daNote.canBeHit)
 					&& daNote.y + daNote.offset.y * daNote.scale.y <= (targetY + Note.swagWidth / 2))
 				{
@@ -316,14 +302,10 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 			if (downscroll ? (daNote.y > targetY + daNote.height + 50) : (daNote.y < targetY - daNote.height - 50))
 			{
-				if (daNote.tooLate || daNote.wasGoodHit)
-				{
-					daNote.active = false;
-					daNote.visible = false;
-					daNote.destroy();
-				}
+				if (daNote.tooLate || daNote.wasGoodHit){ daNote.destroy(); }
 			}
 		});
+		sortNotes();
 	}
 
 	// some helper functions
@@ -340,6 +322,13 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 			if (strum.state == HOLD){ return true; }
 		}
 		return false;
+	}
+
+	public function sortNotes(){
+		notes.sort(noteSortThing, FlxSort.DESCENDING);
+	}
+	public static inline function noteSortThing(Order:Int, Obj1:Note, Obj2:Note):Int{
+		return FlxSort.byValues(Order, Obj1.strumTime, Obj2.strumTime);
 	}
 }
 

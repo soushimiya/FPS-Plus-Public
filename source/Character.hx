@@ -131,12 +131,12 @@ class Character extends FlxSpriteGroup
 					holdTimer = 0;
 				}
 				
-				if (holdTimer >= Conductor.stepCrochet * stepsUntilRelease * 0.001 && canAutoAnim && (PREVENT_SHORT_IDLE ? !PlayState.instance.anyOpponentNoteInRange : true)){
+				if (holdTimer >= Conductor.stepCrochet * stepsUntilRelease * 0.001 && canAutoAnim){
 					if(USE_IDLE_END){ 
 						idleEnd(); 
 					}
 					else{ 
-						dance(); 
+						dance();
 						danceLockout = true;
 					}
 					holdTimer = 0;

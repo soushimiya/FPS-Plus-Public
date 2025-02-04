@@ -586,7 +586,7 @@ class PlayState extends MusicBeatState
 
 		playerStrums = new Strumline(FlxG.width / 2, strumLineVerticalPosition, "Default", DEFAULT, ["tweenManager" => tweenManager]);
 		playerStrums.character = boyfriend;
-		playerStrums.onHit.add(goodNoteHit);
+		playerStrums.onHit.add(playerHit);
 
 		enemyStrums = new Strumline(0, strumLineVerticalPosition, "Default", DEFAULT, ["tweenManager" => tweenManager]);
 		enemyStrums.character = dad;
@@ -601,10 +601,11 @@ class PlayState extends MusicBeatState
 			enemyStrums.scrollSpeed = FlxMath.roundDecimal(PlayState.SONG.speed, 2);
 		}
 
+		playerStrums.downscroll = Config.downscroll;
+		enemyStrums.downscroll = Config.downscroll;
+
 		add(playerStrums);
-		add(playerStrums.notes);
 		add(enemyStrums);
-		add(enemyStrums.notes);
 
 		generateSong(SONG.song);
 
@@ -1788,46 +1789,31 @@ class PlayState extends MusicBeatState
 		
 	}
 
-	function goodNoteHit(note:Note):Void{
-		if (!note.wasGoodHit){
-
-			if(note.isFake){
-				note.wasGoodHit = true;
-				return;
-			}
-
-			if (!note.isSustainNote){
-				popUpScore(note, healthAdjustOverride == null);
-				combo++;
-				if(combo > songStats.highestCombo) { songStats.highestCombo = combo; }
-			}
-			else{
-				if(healthAdjustOverride != null){
-					health += Scoring.HOLD_HEAL_AMOUNT * Config.healthMultiplier;
-				}
-				songStats.score += Std.int(Scoring.HOLD_SCORE_PER_SECOND * (Conductor.stepCrochet/1000));
-				songStats.susCount++;
-			}
-
-			if(healthAdjustOverride != null){
-				health += healthAdjustOverride;
-				healthAdjustOverride = null;
-			}
-
-			note.wasGoodHit = true;
-			if(canChangeVocalVolume){ vocals.volume = 1; }
-
-			if(boyfriend.characterInfo.info.functions.noteHit != null){
-				boyfriend.characterInfo.info.functions.noteHit(boyfriend, note);
-			}
-			stage.noteHit(boyfriend, note);
-			for(script in scripts){ script.noteHit(boyfriend, note); }
-
-			if(!note.isSustainNote){
-				note.destroy();
-			}
-
+	function playerHit(note:Note):Void{
+		// Did NoteCover
+		if(note.isFake){
+			return;
 		}
+
+		if (!note.isSustainNote){
+			popUpScore(note, healthAdjustOverride == null);
+			combo++;
+			if(combo > songStats.highestCombo) { songStats.highestCombo = combo; }
+		}
+		else{
+			if(healthAdjustOverride != null){
+				health += Scoring.HOLD_HEAL_AMOUNT * Config.healthMultiplier;
+			}
+			songStats.score += Std.int(Scoring.HOLD_SCORE_PER_SECOND * (Conductor.stepCrochet/1000));
+			songStats.susCount++;
+		}
+
+		if(healthAdjustOverride != null){
+			health += healthAdjustOverride;
+			healthAdjustOverride = null;
+		}
+		
+		if(canChangeVocalVolume){ vocals.volume = 1; }
 	}
 
 	override function stepHit(){
@@ -1868,16 +1854,6 @@ class PlayState extends MusicBeatState
 			if (SONG.notes[Math.floor(curStep / 16)].changeBPM){
 				Conductor.changeBPM(SONG.notes[Math.floor(curStep / 16)].bpm);
 			}
-
-			// Dad doesnt interupt his own notes
-			if(dadBeats.contains(curBeat % 4) && dad.canAutoAnim && dad.holdTimer == 0 && !dad.isSinging && (Character.PREVENT_SHORT_IDLE ? !anyOpponentNoteInRange : true)){
-				dad.dance();
-			}
-			
-		}
-		else{
-			if(dadBeats.contains(curBeat % 4))
-				dad.dance();
 		}
 
 		if(curBeat % camBopFrequency == 0 && autoCamBop){
@@ -1891,12 +1867,16 @@ class PlayState extends MusicBeatState
 			iconP1.tweenToDefaultScale(0.2, FlxEase.quintOut);
 			iconP2.tweenToDefaultScale(0.2, FlxEase.quintOut);
 		}
+
+		if(dadBeats.contains(curBeat % 4) && dad.canAutoAnim && !dad.isSinging){
+			dad.dance();
+		}
 		
-		if (curBeat % gfBopFrequency == 0){
+		if (curBeat % gfBopFrequency == 0 && gf.canAutoAnim && !gf.isSinging){
 			gf.dance();
 		}
 
-		if(bfBeats.contains(curBeat % 4) && boyfriend.canAutoAnim && !boyfriend.isSinging && (Character.PREVENT_SHORT_IDLE ? !anyPlayerNoteInRange : true)){
+		if(bfBeats.contains(curBeat % 4) && boyfriend.canAutoAnim && !boyfriend.isSinging){
 			boyfriend.dance();
 		}
 
