@@ -25,7 +25,7 @@ class Strumline extends FlxTypedSpriteGroup<StrumSprite>
 
 	public var character:Character = null;
 
-	public var inputs:Array<String> = ["gameplayUp", "gameplayDown", "gameplayLeft", "gameplayRight"];
+	public var inputs:Array<String> = ["gameplayLeft", "gameplayDown", "gameplayUp", "gameplayRight"];
 
 	public var autoplay:Bool = false;
 	public var downscroll:Bool = false;
