@@ -45,6 +45,8 @@ class Note extends FlxSprite
 	var noteSkin:NoteSkinBase;
 	public var canGlow:Bool;
 
+	var graphicScale:Float;
+
 	inline public static final swagWidth:Float = 112/*160 * 0.7*/;
 	inline public static final PURP_NOTE:Int = 0;
 	inline public static final GREEN_NOTE:Int = 2;
@@ -154,6 +156,7 @@ class Note extends FlxSprite
 
 		setGraphicSize(Std.int(width * noteSkin.info.scale));
 		updateHitbox();
+		graphicScale = scale.x;
 
 		animation.play("scroll");
 
@@ -175,17 +178,9 @@ class Note extends FlxSprite
 			yOffset = noteSkin.info.offset.y;
 
 			if (prevNote.isSustainNote){
-
 				prevNote.isSustainEnd = false;
-
 				prevNote.animation.play("hold");
-
-				prevNote.scale.y *= Conductor.stepCrochet / 100 * 1.485 * scrollSpeed;
-				prevNote.scale.y *= noteSkin.info.holdScaleAdjust;
-				prevNote.scale.y *= prevNote.isFake ? 0.5 : 1;
-				prevNote.updateHitbox();
-
-				if(prevNote.isFake){ prevNote.yOffset += prevNote.height; }
+				prevNote.updateHoldLength();
 			}
 		}
 
@@ -252,5 +247,23 @@ class Note extends FlxSprite
 
 	inline public function idle():Void{
 		animation.play("scroll");
+	}
+
+	public function updateHoldLength(_speedMultiplier:Float = 1){
+		if(!isSustainNote || isSustainEnd){ return; }
+
+		var speed = PlayState.SONG.speed;
+		if(Config.scrollSpeedOverride > 0){
+			speed = Config.scrollSpeedOverride;
+		}
+		speed *= _speedMultiplier;
+
+		scale.y = graphicScale;
+		scale.y *= Conductor.stepCrochet / 100 * 1.485 * speed;
+		scale.y *= noteSkin.info.holdScaleAdjust;
+		scale.y *= isFake ? 0.5 : 1;
+		updateHitbox();
+
+		if(isFake){ yOffset = noteSkin.info.offset.y + height; }
 	}
 }
