@@ -14,6 +14,9 @@ class MusicBeatState extends FlxUIStateExt
 	private var curStep:Int = 0;
 	private var curBeat:Int = 0;
 
+	private var curDecStep:Float = 0;
+	private var curDecBeat:Float = 0;
+
 	override function create(){
 		super.create();
 	}
@@ -33,6 +36,7 @@ class MusicBeatState extends FlxUIStateExt
 
 		// Needs to be ROUNED, rather than ceil or floor
 		curBeat = Math.round(curStep / 4);
+		curDecBeat = curDecStep/4;
 	}
 
 	/**
@@ -63,6 +67,7 @@ class MusicBeatState extends FlxUIStateExt
 				lastChange = Conductor.bpmChangeMap[i];
 		}
 
+		curDecStep = lastChange.stepTime + (Conductor.songPosition - lastChange.songTime) / Conductor.stepCrochet;
 		curStep = lastChange.stepTime + Math.floor((Conductor.songPosition - lastChange.songTime) / Conductor.stepCrochet);
 	}
 

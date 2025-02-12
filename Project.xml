@@ -101,6 +101,11 @@
 	<haxelib name="grig.audio" />
 	<haxelib name="polymod" />
 
+	<haxedef name="FM_ENGINE" value="FPSPLUS"/>
+
+	<haxelib name="funkin-modchart" />
+	<haxeflag name="--macro" value="modchart.core.macros.Macro.includeFiles()"/>
+
 	<!--haxelib name="newgrounds"/-->
 	<!--haxelib name="faxe" if='switch'/-->
 	<!--haxelib name="polymod"/-->

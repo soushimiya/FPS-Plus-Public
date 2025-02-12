@@ -53,6 +53,7 @@ import modding.PolymodHandler;
 import openfl.filters.ShaderFilter;
 import story.StoryMenuState;
 import caching.*;
+import modchart.Manager;
 
 using StringTools;
 
@@ -815,6 +816,10 @@ class PlayState extends MusicBeatState
 
 		generateStaticArrows(0);
 		generateStaticArrows(1);
+
+		var modchartManager:Manager = new Manager();
+		add(modchartManager);
+		modchartManager.setPercent("drunk", 150, -1);
 
 		startedCountdown = true;
 		Conductor.songPosition = 0;
